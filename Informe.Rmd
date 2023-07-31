@@ -1,0 +1,147 @@
+---
+title: "Proyecto 1"
+author: "Fredy Velasquez, Angel Higueros, Mariana David, Javier Valle"
+date: "2023-07-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+```
+
+## Proyecto 1
+
+Para la elaboracion de este proyecto fue necesario descargar los datos de los establecimientos educativos de todo el pais, especificamente de los centros que lleguen a nivel diversificado. Proporcionados por mineduc (https://www.mineduc.gob.gt/BUSCAESTABLECIMIENTO_GE/)
+Donde compilamos todos los centros para generar un CSV con los datos crudos.
+
+```{r}
+db<-read.csv('DatosCrudos.csv')
+head(db)
+
+
+```
+El cual cuenta con `r nrow(db)` filas y `r ncol(db)` columnas, las cuales son detalladas en el code book, ubicado en el repositorio.
+
+
+```{r}
+summary(db)
+```
+
+
+
+### Diccionario de Variables: 
+
+¿Que contiene el conjunto de datos?
+
+Dentro de los datos se encuentran un listado detallado de los establecimientos educativos del pais, cabe destacar que cada uno de estos conjuntos de datos se encuentran distribuidos por departamento, es decir que se encontraban en un conjunto los datos correspondientes al departamento de Guatemala, en otro conjunto de datos los correspondientes a Izabal, por hacer mencion y asi seguidos con cada uno de los 22 departamentos del pais. 
+
+Cada conjunto de datos contenian las siguientes variables: 
+
+1. CODIGO: Esta es una variable de forma "chr", en el cual se encuentran listados los codigos de registro de cada uno de los centros educativos. 
+
+2. DISTRITO: Esta es una variable de forma "chr", en el cual podemos ver como se encuentran listados los centros educativos en base al distrido en el que se encuentran
+
+3. DEPARTAMENTO: Como su nombre lo indica, esta variable muestra el nombre del departamento en el que se encuentra en establecimiento educativo.
+
+4. MUNICIPIO: Como su nombre lo indica, se listan de manera ordenada el nombre del municipio en el que se encuentran ubicados los establecimientos.
+
+5. ESTABLECIMIENTO: En esta variable se lista de manera ordenada el nombre del centro educativo, el nombre bajo el cual esta registrado. 
+
+6. DIRECCION: En esta variable se encuentra la ubicacion fisica del centro estudiantil, la ubicacion en la cual se encuentra establecido. 
+
+7. TELEFONO: Como su nombre lo indica, se encuentra listado el numero de telefono que tiene el centro educativo, en algunos datos no se fue proporcionado, por eso se encuentra bajo N/A.
+
+8. SUPERVISOR: En esta variable se encuentra el nombre de la persona que designada por el MINEDUC para supervisar al centro estudiantil.
+
+9. DIRECTOR: En esta variable se encuentra el nombre de la persona que funge como director del centro educativo, en algunos datos no se encuentra dicha persona, por eso se encuentra bajo N/A.
+
+10. NIVEL: En esta variable se encuentra el nivel educativo que ofrece el establecimiento, puede ser: "PRIMARIO", "BASICO" o "DIVERSIFICADO"
+
+11. SECTOR: En esta variable se encuentra establecido el sector al que pertenece el centro educativo, el cual puede ser ya sea "PRIVADO" , "OFICIAL" , "MUNICIPAL" O "COOPERATIVA"
+
+12. AREA: En esta varable se encuentra listado a que area pertenece el centro educativo, el cual puede ser: "RURAL" o "URBANO"
+
+13. STATUS: En esta variable se encuentra en el estado en el que se encuentra el centro eductivo, el cual puede ser "CERRADO TEMPORALMENTE", "ABIERTO" O "TEMPORALMENTE TITULOS"
+
+14. MODALIDAD: En esta variable se encuentra establecido que tipo de modalidad maneja el centro educativo, puede ser ya sea "MONOLINGUE" o "BILINGUE".
+
+15. JORNADA En la variable se enceuntra listado que jornadas manena el centro educativo, dentro de estas variables se encuentra: "DOBLE" , "VESPERTINA" o "MATUTINA".
+
+16. PLAN: Como su nombre lo indica, en esta variable se encuentra establecido que plan maneja el centro, el cual puede ser "DIARIO(REGULAR)" o "FIN DE SEMANA".
+
+17. DEPARTAMENTAL: En esta variable se encuentra establecido el departamental que se encarga de cada uno de los establecimientos (la departamental es la entidad que se encarga de supervisar al centro educativo, de alli sale la variable de supervisor.)
+
+### Limpieza de datos
+
+El primer dato a limpiar fue la columna telefono, la particuluridad que tenia esta columna es que muchos centros educativos habian ingresado el numero de telefono de manera incorrecta por ello lo que se realizo fue lo siguiente:
+* Verificar que todos los numeros sean de 8 digitos
+* Eliminar guiones y/o espacios entre los numeros
+* Dejar un solo numero telefonico de 8 digitos
+* Verificar que sean numeros
+
+```{r}
+db$TELEFONO<-gsub("-","",as.character(db$TELEFONO))
+
+
+db$TELEFONO<-ifelse(nchar(db$TELEFONO)<8,NA,substr(db$TELEFONO, 1, 8))
+
+```
+
+Tras realizar lo anterior los datos de telefono han sido limpiados.
+
+
+De igual forma, se realizo una limpieza para la columna de Director: 
+
+```{r}
+#Reparando el director
+
+ 
+db<-read.csv('DatosCrudos.csv')
+
+
+db[db$DIRECTOR == "-" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "--" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "---" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "----" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "-----" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "-------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "--------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "---------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "----------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "-----------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "------------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "-------------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "--------------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "----------------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "---------------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "-----------------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "-------------------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "-----------------------------" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "..." & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == ".." & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "." & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+db[db$DIRECTOR == "0" & !is.na(db$DIRECTOR), ]$DIRECTOR <- NA
+
+```
+
+De esta manera nos estamos asegurando de que la variable *Director* ya no cuenta con espacios en los que se encuentre un caracter diferente a la que no sea "N/A", porque asi nos asegurabamos que cualquier dato que fuera diferente a NA pueda ser visto y trabajado de la misma forma que un NA. 
+
+Y por último, se hizo una limpieza a la variable *DEPARTAMENTAL* que consistió en eliminar dicha varibale por completo porque definimos que nos brinda la misma información que la variable *DEPARTAMENTO*.
+
+```{r}
+colnames(db)
+new_db<-db%>% select (-DEPARTAMENTAL)
+colnames(new_db)
+
+```
+
+Ya con la base de datos limpia podemos generar un nuevo CSV con los nuevos datos.
+
+```{R}
+write.csv(new_db,"DatosLimpios.csv", row.names = FALSE)
+DatosLimpios<-read.csv("DatosLimpios.csv")
+head(DatosLimpios)
+```
