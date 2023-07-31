@@ -138,6 +138,71 @@ colnames(new_db)
 
 ```
 
+
+# Conversiones de formato.
+```{r}
+# Eliminar filas con valores faltantes en las columnas de interés
+db <- db[complete.cases(db[, c("CODIGO", "DISTRITO", "DEPARTAMENTO", "MUNICIPIO")]), ]
+
+# Imputar valores usando la media o mediana en la columna TELEFONO
+mean_telefono <- mean(db$TELEFONO, na.rm = TRUE)
+db$TELEFONO[is.na(db$TELEFONO)] <- mean_telefono
+
+```
+
+# Manejando valores atípicos.
+```{r}
+# Convertir la columna "TELEFONO" a numérica y eliminar registros no numéricos
+db$TELEFONO <- as.numeric(db$TELEFONO)
+db <- db[!is.na(db$TELEFONO), ]
+
+# Eliminar valores atípicos en la columna TELEFONO utilizando el rango intercuartil
+Q1 <- quantile(db$TELEFONO, 0.25, na.rm = TRUE)
+Q3 <- quantile(db$TELEFONO, 0.75, na.rm = TRUE)
+IQR <- Q3 - Q1
+limite_inferior <- Q1 - 1.5 * IQR
+limite_superior <- Q3 + 1.5 * IQR
+db <- db[db$TELEFONO >= limite_inferior & db$TELEFONO <= limite_superior, ]
+
+# Imprimiendo los primeros registros de la columna "TELÉFONO"
+head(db$TELEFONO)
+
+# Sacando un resumen de la columna "TELEFONO".
+summary(db$TELEFONO)
+```
+
+# Eliminando duplibados en la columna de "ESTABLECIMIENTO".
+```{r}
+# Convertir la columna "ESTABLECIMIENTO" a minúsculas
+db$ESTABLECIMIENTO <- tolower(db$ESTABLECIMIENTO)
+
+# Eliminar duplicados basados en la columna "ESTABLECIMIENTO"
+db <- unique(db, by = "ESTABLECIMIENTO")
+
+```
+
+# Aplicar codificación one-hot a las columnas categóricas
+```{r}
+# Aplicar codificación one-hot a las columnas categóricas
+
+# Obtener las columnas categóricas
+columnas_categoricas <- sapply(db, is.factor)
+
+# Codificación one-hot para las columnas categóricas
+for (columna in names(db[columnas_categoricas])) {
+  valores_unicos <- unique(db[[columna]])
+  for (valor in valores_unicos) {
+    nombre_dummy <- paste(columna, valor, sep = "_")
+    db[[nombre_dummy]] <- as.integer(db[[columna]] == valor)
+  }
+}
+
+# Eliminar las columnas categóricas originales
+db <- db[, !columnas_categoricas]
+
+head(db)
+```
+
 Ya con la base de datos limpia podemos generar un nuevo CSV con los nuevos datos.
 
 ```{R}

@@ -410,6 +410,8 @@ head(db)</code></pre>
 ## 4   FIN DE SEMANA  ALTA VERAPAZ
 ## 5   FIN DE SEMANA  ALTA VERAPAZ
 ## 6 DIARIO(REGULAR)  ALTA VERAPAZ</code></pre>
+<p>El cual cuenta con 8143 filas y 17 columnas, las cuales son
+detalladas en el code book, ubicado en el repositorio.</p>
 <pre class="r"><code>summary(db)</code></pre>
 <pre><code>##     CODIGO            DISTRITO         DEPARTAMENTO        MUNICIPIO        
 ##  Length:8143        Length:8143        Length:8143        Length:8143       
@@ -562,6 +564,112 @@ colnames(new_db)</code></pre>
 ##  [5] &quot;ESTABLECIMIENTO&quot; &quot;DIRECCION&quot;       &quot;TELEFONO&quot;        &quot;SUPERVISOR&quot;     
 ##  [9] &quot;DIRECTOR&quot;        &quot;NIVEL&quot;           &quot;SECTOR&quot;          &quot;AREA&quot;           
 ## [13] &quot;STATUS&quot;          &quot;MODALIDAD&quot;       &quot;JORNADA&quot;         &quot;PLAN&quot;</code></pre>
+</div>
+</div>
+<div id="conversiones-de-formato." class="section level1">
+<h1>Conversiones de formato.</h1>
+<pre class="r"><code># Eliminar filas con valores faltantes en las columnas de interés
+db &lt;- db[complete.cases(db[, c(&quot;CODIGO&quot;, &quot;DISTRITO&quot;, &quot;DEPARTAMENTO&quot;, &quot;MUNICIPIO&quot;)]), ]
+
+# Imputar valores usando la media o mediana en la columna TELEFONO
+mean_telefono &lt;- mean(db$TELEFONO, na.rm = TRUE)</code></pre>
+<pre><code>## Warning in mean.default(db$TELEFONO, na.rm = TRUE): argument is not numeric or
+## logical: returning NA</code></pre>
+<pre class="r"><code>db$TELEFONO[is.na(db$TELEFONO)] &lt;- mean_telefono</code></pre>
+</div>
+<div id="manejando-valores-atípicos." class="section level1">
+<h1>Manejando valores atípicos.</h1>
+<pre class="r"><code># Convertir la columna &quot;TELEFONO&quot; a numérica y eliminar registros no numéricos
+db$TELEFONO &lt;- as.numeric(db$TELEFONO)</code></pre>
+<pre><code>## Warning: NAs introducidos por coerción</code></pre>
+<pre class="r"><code>db &lt;- db[!is.na(db$TELEFONO), ]
+
+# Eliminar valores atípicos en la columna TELEFONO utilizando el rango intercuartil
+Q1 &lt;- quantile(db$TELEFONO, 0.25, na.rm = TRUE)
+Q3 &lt;- quantile(db$TELEFONO, 0.75, na.rm = TRUE)
+IQR &lt;- Q3 - Q1
+limite_inferior &lt;- Q1 - 1.5 * IQR
+limite_superior &lt;- Q3 + 1.5 * IQR
+db &lt;- db[db$TELEFONO &gt;= limite_inferior &amp; db$TELEFONO &lt;= limite_superior, ]
+
+# Imprimiendo los primeros registros de la columna &quot;TELÉFONO&quot;
+head(db$TELEFONO)</code></pre>
+<pre><code>## [1] 77945104 79521468 54641454 79522555 79545566 79514440</code></pre>
+<pre class="r"><code># Sacando un resumen de la columna &quot;TELEFONO&quot;.
+summary(db$TELEFONO)</code></pre>
+<pre><code>##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+##        0 36064351 55158459 54019011 77659286 88811488</code></pre>
+</div>
+<div id="eliminando-duplibados-en-la-columna-de-establecimiento." class="section level1">
+<h1>Eliminando duplibados en la columna de “ESTABLECIMIENTO”.</h1>
+<pre class="r"><code># Convertir la columna &quot;ESTABLECIMIENTO&quot; a minúsculas
+db$ESTABLECIMIENTO &lt;- tolower(db$ESTABLECIMIENTO)
+
+# Eliminar duplicados basados en la columna &quot;ESTABLECIMIENTO&quot;
+db &lt;- unique(db, by = &quot;ESTABLECIMIENTO&quot;)</code></pre>
+</div>
+<div id="aplicar-codificación-one-hot-a-las-columnas-categóricas" class="section level1">
+<h1>Aplicar codificación one-hot a las columnas categóricas</h1>
+<pre class="r"><code># Aplicar codificación one-hot a las columnas categóricas
+
+# Obtener las columnas categóricas
+columnas_categoricas &lt;- sapply(db, is.factor)
+
+# Codificación one-hot para las columnas categóricas
+for (columna in names(db[columnas_categoricas])) {
+  valores_unicos &lt;- unique(db[[columna]])
+  for (valor in valores_unicos) {
+    nombre_dummy &lt;- paste(columna, valor, sep = &quot;_&quot;)
+    db[[nombre_dummy]] &lt;- as.integer(db[[columna]] == valor)
+  }
+}
+
+# Eliminar las columnas categóricas originales
+db &lt;- db[, !columnas_categoricas]
+
+head(db)</code></pre>
+<pre><code>##          CODIGO DISTRITO DEPARTAMENTO MUNICIPIO
+## 1 16-01-0138-46   16-031 ALTA VERAPAZ     COBAN
+## 2 16-01-0142-46   16-005 ALTA VERAPAZ     COBAN
+## 3 16-01-0145-46   16-006 ALTA VERAPAZ     COBAN
+## 5 16-01-0155-46   16-031 ALTA VERAPAZ     COBAN
+## 6 16-01-0471-46   16-031 ALTA VERAPAZ     COBAN
+## 7 16-01-0478-46   16-031 ALTA VERAPAZ     COBAN
+##                                           ESTABLECIMIENTO
+## 1                                           colegio coban
+## 2 instituto normal mixto del norte &#39;emilio rosales ponce&#39;
+## 3         instituto de tursmo y aviacon del norte i.t.a.n
+## 5                                  liceo &quot;moderno latino&quot;
+## 6                       colegio de informatica &quot;ceninfav&quot;
+## 7                          colegio evangelico &quot;la patria&quot;
+##                                DIRECCION TELEFONO
+## 1 KM.2 SALIDA A SAN JUAN CHAMELCO ZONA 8 77945104
+## 2                    3A AVE 6-23 ZONA 11 79521468
+## 3                      3 AV. 5-28 ZONA 4 54641454
+## 5                 11 AVENIDA 5-17 ZONA 4 79522555
+## 6                     12 AV. 2-12 ZONA 1 79545566
+## 7                FINCA CHIMAXITO ZONA 11 79514440
+##                        SUPERVISOR                  DIRECTOR         NIVEL
+## 1 MERCEDES JOSEFINA TORRES GALVEZ JULIO CESAR VILLELA AMADO DIVERSIFICADO
+## 2 WHOLFANG ALEXANDER PONCE SIERRA                      &lt;NA&gt; DIVERSIFICADO
+## 3                 EFRAIN CAAL CUC        LUIS FERNANDO SOTO DIVERSIFICADO
+## 5 MERCEDES JOSEFINA TORRES GALVEZ   JORGE BENEDICTO COC POP DIVERSIFICADO
+## 6 MERCEDES JOSEFINA TORRES GALVEZ    MARIA MAGDALENA BOL CU DIVERSIFICADO
+## 7 MERCEDES JOSEFINA TORRES GALVEZ      ELIGIO PASTOR GARCÍA DIVERSIFICADO
+##    SECTOR   AREA                STATUS  MODALIDAD    JORNADA            PLAN
+## 1 PRIVADO URBANA               ABIERTA MONOLINGUE   MATUTINA DIARIO(REGULAR)
+## 2 OFICIAL URBANA               ABIERTA   BILINGUE VESPERTINA DIARIO(REGULAR)
+## 3 PRIVADO URBANA CERRADA TEMPORALMENTE MONOLINGUE   MATUTINA DIARIO(REGULAR)
+## 5 PRIVADO URBANA               ABIERTA MONOLINGUE      DOBLE   FIN DE SEMANA
+## 6 PRIVADO URBANA               ABIERTA MONOLINGUE VESPERTINA DIARIO(REGULAR)
+## 7 PRIVADO URBANA CERRADA TEMPORALMENTE MONOLINGUE   MATUTINA DIARIO(REGULAR)
+##   DEPARTAMENTAL
+## 1  ALTA VERAPAZ
+## 2  ALTA VERAPAZ
+## 3  ALTA VERAPAZ
+## 5  ALTA VERAPAZ
+## 6  ALTA VERAPAZ
+## 7  ALTA VERAPAZ</code></pre>
 <p>Ya con la base de datos limpia podemos generar un nuevo CSV con los
 nuevos datos.</p>
 <pre class="r"><code>write.csv(new_db,&quot;DatosLimpios.csv&quot;, row.names = FALSE)
@@ -609,7 +717,6 @@ head(DatosLimpios)</code></pre>
 ## 4   FIN DE SEMANA
 ## 5   FIN DE SEMANA
 ## 6 DIARIO(REGULAR)</code></pre>
-</div>
 </div>
 
 
